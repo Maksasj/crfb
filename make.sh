@@ -1,0 +1,1 @@
+cmake --build build && ./build/examples/crfp_example_0 > result.txt

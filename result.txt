@@ -1,0 +1,41 @@
+Server sent: 12 'RFB 003.008
+'
+
+Security types 2
+    Security type: 1
+No Authentication
+    Security type: 16
+Unofficial security type
+
+Server sent: 4 '0'
+    SecurityResult OK
+
+Send client init !
+Server sent: 2, '4320'
+Server sent: 2, '1350'
+Server sent: 1, '32'
+Server sent: 1, '24'
+Server sent: 1, '0'
+Server sent: 1, '1'
+Server sent: 2, '255'
+Server sent: 2, '255'
+Server sent: 2, '255'
+Server sent: 1, '16'
+Server sent: 1, '8'
+Server sent: 1, '0'
+Server sent: 1, '0'
+Server sent: 2, '0' '0' '0'
+Server sent: 4, '15'
+Server sent: 15 'laptop-63jbkhib'
+
+Server sent: 4
+Message type: 0
+Number Of Rectangles 1
+
+Server sent: 12
+xPosition: 0
+yPosition: 0
+width: 4320
+height: 1350
+encodingType: 0
+Server sent: 12264
