@@ -3,10 +3,10 @@
 #define BUFFLEN 4096
 
 void int_to_little(int* value) {
-    *value = ((*value>>24)&0xff) | // move byte 3 to byte 0
-        ((*value<<8)&0xff0000) | // move byte 1 to byte 2
-        ((*value>>8)&0xff00) | // move byte 2 to byte 1
-        ((*value<<24)&0xff000000); // byte 0 to byte 3
+    *value = ((*value >> 24) & 0xff) | // move byte 3 to byte 0
+             ((*value << 8) & 0xff0000) | // move byte 1 to byte 2
+             ((*value >> 8) & 0xff00) | // move byte 2 to byte 1
+             ((*value << 24) & 0xff000000); // byte 0 to byte 3
 }
 
 void short_to_little(short* value) {
@@ -201,9 +201,90 @@ int main(int argc, char *argv[]){
         }
     }
 
-    printf("\n");
+    /*
+    {
+        typedef struct SetEncodings {
+            unsigned char messageType;
+            unsigned char padding[3];
+            unsigned short numberOfEcodings;
+        } SetEncodings;
+
+        SetEncodings encodings;
+        encodings.messageType = 2;
+        encodings.padding[0] = 0;
+        encodings.padding[1] = 0;
+        encodings.padding[2] = 0;
+        encodings.numberOfEcodings = 1;
+
+        if(send(client->socket, &encodings, sizeof(SetEncodings), 0) == -1) {
+            fprintf(stderr,"ERROR failed to send packet to server\n");
+        }
+
+        typedef struct Encoding {
+            unsigned int encodingType;
+        } Encoding;
+
+        Encoding ecoding;
+        ecoding.encodingType = 0;
+        if(send(client->socket, &ecoding, sizeof(Encoding), 0) == -1) {
+            fprintf(stderr,"ERROR failed to send packet to server\n");
+        }
+
+        printf("Send all incoding data\n");
+    }
 
     {
+        typedef struct PixelFormat {
+            unsigned char bitsPerPixel;
+            unsigned char depth;
+            unsigned char bigEndianFlag;
+            unsigned char trueColorFlag;
+            unsigned short redMax;
+            unsigned short greenMax;
+            unsigned short blueMax;
+            unsigned char redShift;
+            unsigned char greenShift;
+            unsigned char blueShift;
+            unsigned char padding[3];
+        } PixelFormat;
+
+        typedef struct SetPixelFormat {
+            unsigned char messageType;
+            unsigned char padding[3];
+            PixelFormat pixelFormat;
+        } SetPixelFormat;
+
+        SetPixelFormat format;
+        format.messageType = 0;
+        format.padding[0] = 0;
+        format.padding[1] = 0;
+        format.padding[2] = 0;
+        format.pixelFormat.bitsPerPixel = 32;
+        format.pixelFormat.depth = 24;
+        format.pixelFormat.bigEndianFlag = 0 ;
+        format.pixelFormat.trueColorFlag = 1;
+        format.pixelFormat.redMax = 255 ;
+        format.pixelFormat.greenMax = 255;
+        format.pixelFormat.blueMax = 255;
+        format.pixelFormat.redShift = 16;
+        format.pixelFormat.greenShift = 8;
+        format.pixelFormat.blueShift = 0;
+
+        short_to_little(&format.pixelFormat.redMax);
+        short_to_little(&format.pixelFormat.greenMax);
+        short_to_little(&format.pixelFormat.blueMax);
+
+        if(send(client->socket, &format, sizeof(SetPixelFormat), 0) == -1) {
+            fprintf(stderr,"ERROR failed to send packet to server\n");
+        }
+
+        printf("Send pixel format data\n");
+    }
+    */
+
+    printf("\n");
+
+    while(1) {
         typedef struct FramebufferUpdateRequest {
             unsigned char messageType;
             unsigned char incremental;
@@ -217,14 +298,22 @@ int main(int argc, char *argv[]){
         FramebufferUpdateRequest req;
         req.messageType = 3;
         req.incremental = 0; // Lost
+
         req.xPosition = 0;
         req.yPosition = 0;
         req.width = 1920;
         req.height = 1080;
 
+        short_to_little(&req.xPosition);
+        short_to_little(&req.yPosition);
+        short_to_little(&req.width);
+        short_to_little(&req.height);
+
         if(send(client->socket, &req, sizeof(FramebufferUpdateRequest), 0) == -1) {
             fprintf(stderr,"ERROR failed to send packet to server\n");
         }
+
+        printf("Send framebuffer update request !\n");
 
         {
             typedef struct FramebufferUpdate {
@@ -245,7 +334,7 @@ int main(int argc, char *argv[]){
             printf("Message type: %d\n", update.messageType);
             printf("Number Of Rectangles %d\n", update.numberOfRectangles);
 
-            for(int i = 0; i < 1; ++i) {
+            for(int i = 0; i < update.numberOfRectangles; ++i) {
                 printf("\n");
                 typedef struct Rectangle {
                     unsigned short xPosition;
@@ -273,23 +362,37 @@ int main(int argc, char *argv[]){
                     printf("encodingType: %d\n", rect.encodingType);
                 }
 
-                {
-                    size_t size = 1920 * 1080 * 4;
-                    int* buffer = (int*) malloc(size);
+                size_t size = 1920 * 1080;
+                unsigned char* buffer = (char*) malloc(size);
 
-                    int len = recv(client->socket, buffer, size, 0);
-                    printf("Server sent: %d\n", len);
-                    if(len == 0 || len == -1) {
-                        fprintf(stderr, "ERROR failed to recv packet from server\n");
+                size_t len = 0;
+                while (len < size) {
+                    ssize_t n = recv(client->socket, buffer + len, size - len, 0);
+                    if (n <= 0) {
+                        // error handling here
                         break;
+                        printf("Errpr !\n");
                     }
-
-                    
- 
-                    free(buffer);
+                    len += n;
                 }
+
+                printf("%ld\n", len);
+
+                for(int x = 0; x < 1920; ++x) {
+                    for(int y = 0; y < 1080; ++y) {
+                        printf("%x ", *(buffer + 1920 * y + x));
+                    }
+                    printf("\n");
+                }
+   
+                // int len = recv(client->socket, buffer, size, 0);
+                // printf("Server sent: %d\n", len);
+                free(buffer);        
             }
         }
+
+        fflush(stdout);
+        sleep(1);
     }
 
     crfp_client_close(client);
