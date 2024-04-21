@@ -82,135 +82,45 @@ int main(int argc, char *argv[]){
     crfb_client_recv_capabilities(client, ext.numberOfClientMessages);
     crfb_client_recv_capabilities(client, ext.numberOfEncodings);
 
-    {
-        // Magic packet, probably set encodings
-        char message[40] = {
-            0x02, 0x00, 0x00, 0x09, 0x00, 0x00, 0x00, 0x00, 
-            0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x07, 
-            0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x02, 
-            0xff, 0xff, 0xff, 0x21, 0xff, 0xff, 0xff, 0x20, 
-            0xff, 0xff, 0xff, 0x18, 0xff, 0xff, 0xff, 0x11,
-        }; 
+    crfb_client_send_set_encodings_message(client);
 
-        if(send(client->socket, &message, 40, 0) == -1) {
-            fprintf(stderr,"ERROR failed to send packet to server\n");
-        }
-    }
-
-    /*
-    {   // This is tigth packet
-        // Mistery packet
-        char message[4] = {
-            0xfc, 0x00, 0x02, 0x01
-        }; 
-
-        if(send(client->socket, &message, 4, MSG_DONTWAIT) == -1) {
-            fprintf(stderr,"ERROR failed to send packet to server\n");
-        }
-    }
-    */
+    crfb_client_send_framebuffer_update_request_message(client, 0, 0, 0, 1920, 1080);
 
     {
-        typedef struct FramebufferUpdateRequest {
-            unsigned char messageType;
-            unsigned char incremental;
-
-            unsigned short xPosition;
-            unsigned short yPosition;
-            unsigned short width;
-            unsigned short height;
-        } FramebufferUpdateRequest;
-
-        FramebufferUpdateRequest req;
-        req.messageType = 3;
-        req.incremental = 0; // Lost
-
-        req.xPosition = 0;
-        req.yPosition = 0;
-        req.width = 4320;
-        req.height = 1350;
-
-        crfb_short_to_little(&req.xPosition);
-        crfb_short_to_little(&req.yPosition);
-        crfb_short_to_little(&req.width);
-        crfb_short_to_little(&req.height);
-
-        if(send(client->socket, &req, sizeof(FramebufferUpdateRequest), MSG_DONTWAIT) == -1) {
-            fprintf(stderr,"ERROR failed to send packet to server\n");
-        }
-
-        printf("Send framebuffer update request !\n");
-
-        {
-            char buffer[16] = { '\0' };
-            int len = recv(client->socket, buffer, 16, 0);
-            printf("Server sent: %d\n", len);
-        }
+        char buffer[16] = { '\0' };
+        int len = recv(client->socket, buffer, 16, 0);
+        printf("Server sent: %d\n", len);
     }
+
+    unsigned int width = serverInit.framebufferWidth;
+    unsigned int height = serverInit.framebufferHeight;
+    unsigned int channels = serverInit.pixelFormat.bitsPerPixel / 8;
+
+    CRFBFramebuffer* buffer = crfb_create_frame_buffer(width, height, channels);
+
+    printf("%d", channels);
+    fflush(stdout);
 
     for(int frame = 0; ; ++frame) {
-        typedef struct FramebufferUpdateRequest {
-            unsigned char messageType;
-            unsigned char incremental;
+        crfb_client_send_framebuffer_update_request_message(client, 0, 0, 0, 1920, 1080);
 
-            unsigned short xPosition;
-            unsigned short yPosition;
-            unsigned short width;
-            unsigned short height;
-        } FramebufferUpdateRequest;
+        unsigned int size = width * height * channels;
+        unsigned int len = 0;
 
-        FramebufferUpdateRequest req;
-        req.messageType = 3;
-        req.incremental = 0; // Lost
-
-        req.xPosition = 0;
-        req.yPosition = 0;
-        req.width = 4320;
-        req.height = 1350;
-
-        crfb_short_to_little(&req.xPosition);
-        crfb_short_to_little(&req.yPosition);
-        crfb_short_to_little(&req.width);
-        crfb_short_to_little(&req.height);
-
-        if(send(client->socket, &req, sizeof(FramebufferUpdateRequest), MSG_DONTWAIT) == -1) {
-            fprintf(stderr,"ERROR failed to send packet to server\n");
+        while (len < size) {
+            int n = recv(client->socket, buffer->data + len, size - len, 0);
+            
+            if (n <= 0) break;
+            
+            len += n;
         }
-
-        printf("Send framebuffer update request !\n");
-
-       {
-            size_t size = 4320 * 1350 * 4;
-                unsigned char* buffer = (char*) malloc(size);
-
-                size_t len = 0;
-                while (len < size) {
-                    ssize_t n = recv(client->socket, buffer + len, size - len, 0);
-                    if (n <= 0) {
-                        // error handling here
-                        break;
-                        printf("Errpr !\n");
-                    }
-                    len += n;
-                }
-
-                printf("%ld\n", len);
-
-                for(int x = 0; x < 4320; ++x) {
-                    for(int y = 0; y < 1350; ++y) {
-                        printf("%x ", *(buffer + 4320 * y + x));
-                    }
-                    printf("\n");
-                }   
-
-
-                char fileName[50] = { '\0' };  
-                sprintf(fileName, "sample_%d.png", frame);
-                stbi_write_png(fileName, 4320, 1350, 4, buffer, 4320*4);
-
-                free(buffer);        
-        }
+    
+        char fileName[50] = { '\0' };  
+        sprintf(fileName, "sample_%d.png", frame);
+        stbi_write_png("sample_.png", width, height, channels, buffer->data, width*channels);
     }
+
+    crfb_free_frame_buffer(buffer);
 
     crfb_client_close(client);
     crfb_free_client(client);

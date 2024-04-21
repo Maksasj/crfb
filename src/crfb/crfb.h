@@ -13,5 +13,8 @@
 #include "crfb_capability.h"
 
 #include "crfb_client.h"
+#include "crfb_client_to_server_messages.h"
+
+#include "crfb_frame_buffer.h"
 
 #endif
