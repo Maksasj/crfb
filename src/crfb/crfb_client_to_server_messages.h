@@ -4,6 +4,8 @@
 #include "crfb_backend.h"
 #include "crfb_client.h"
 
+#include "crfb_encoding.h"
+
 typedef enum CRFBCLientToServerMessage {
     SET_PIXEL_FORMAT = 0,
     SET_ENCODINGS = 2,
@@ -13,34 +15,37 @@ typedef enum CRFBCLientToServerMessage {
     CLIENT_CUT_TEXT = 6
 } CRFBCLientToServerMessage;
 
-void crfb_client_send_set_encodings_message(CRFBClient* client) {
-    // Todo
-    // Magic packet, probably set encodings
-    /*
-    char message[40] = {
-        0x02, 0x00, 0x00, 0x09, 0x00, 0x00, 0x00, 0x00, 
-        0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x07, 
-        0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x02, 
-        0xff, 0xff, 0xff, 0x21, 0xff, 0xff, 0xff, 0x20, 
-        0xff, 0xff, 0xff, 0x18, 0xff, 0xff, 0xff, 0x11,
-    }; 
+void crfb_client_send_set_encodings_message(CRFBClient* client, CRFBEncoding* encodings, unsigned long count) {
+    typedef struct SetEncodings {
+        unsigned char messageType;
+        unsigned char padding;
+        unsigned short numberOfEncodings;
+    } SetEncodings;
 
-    if(send(client->socket, &message, 40, 0) == -1) {
-        fprintf(stderr,"ERROR failed to send packet to server\n");
+    SetEncodings enc;
+
+    enc.messageType = SET_ENCODINGS;
+    enc.padding = 0;
+    enc.numberOfEncodings = count;
+    crfb_ushort_to_little(&enc.numberOfEncodings);
+
+    unsigned int size = sizeof(SetEncodings) + sizeof(CRFBEncoding) * count;
+    unsigned char* buffer = malloc(size);
+
+    memcpy(buffer, &enc, sizeof(SetEncodings));
+
+    for(int i = 0; i < count; ++i) {
+        CRFBEncoding encoding = encodings[i];
+        crfb_uint_to_little(&encoding);        
+        memcpy(buffer + sizeof(SetEncodings) + i * sizeof(CRFBEncoding), &encoding, sizeof(CRFBEncoding));
     }
-    */
 
-    char message[36] = {
-        0x02, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 
-        0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x07, 
-        0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x02, 
-        0xff, 0xff, 0xff, 0x21, 0xff, 0xff, 0xff, 0x20, 
-        0xff, 0xff, 0xff, 0x18//, 0xff, 0xff, 0xff, 0x11
-    }; 
+    fflush(stdout);
 
-    if(send(client->socket, &message, 36, 0) == -1) {
+    if(send(client->socket, buffer, size, 0) == -1)
         fprintf(stderr,"ERROR failed to send packet to server\n");
-    }
+
+    free(buffer);
 }
 
 void crfb_client_send_framebuffer_update_request_message(

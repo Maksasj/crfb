@@ -2,6 +2,7 @@
 #define _CRFB_SECURITY_TYPES_H_
 
 #include "crfb_backend.h"
+#include "crfb_client.h"
 
 typedef enum CRFBSecurityType {
     INVALID = 0,
@@ -19,6 +20,23 @@ typedef enum CRFBSecurityType {
     RSA_AES_256_UNEBCRYPTED_SECURITY_TYPE = 130,
     RSA_AES_256_TWO_STEP_SECURITY_TYPE = 133,
 } CRFBSecurityType;
+
+void crfb_client_get_security_types(CRFBClient* client) {
+    // Gets security types
+    char byte;
+    int len = recv(client->socket, &byte, 1, 0);
+    // printf("Security types %x\n", byte);
+
+    for(int i = 0; i < byte; ++i) {
+        char sec;
+        int len = recv(client->socket, &sec, 1, 0);
+        // printf("    Security type: %d\n", sec);
+// 
+        // printf("%s", crfb_stringify_security_type(sec));
+// 
+        // printf("\n");                
+    }
+}
 
 char* crfb_stringify_security_type(CRFBSecurityType secType) {
     if     (secType == 0)   return "Invalid";
