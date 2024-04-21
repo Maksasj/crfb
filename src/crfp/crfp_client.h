@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <netinet/tcp.h>
 
 typedef struct CRFPClient {
     int socket;
