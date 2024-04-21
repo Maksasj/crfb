@@ -98,26 +98,70 @@ int main(int argc, char *argv[]){
 
     CRFBFramebuffer* buffer = crfb_create_frame_buffer(width, height, channels);
 
-    printf("%d", channels);
-    fflush(stdout);
-
     for(int frame = 0; ; ++frame) {
         crfb_client_send_framebuffer_update_request_message(client, 0, 0, 0, 1920, 1080);
 
-        unsigned int size = width * height * channels;
-        unsigned int len = 0;
+        typedef struct CRFBFramebufferUpdate {
+            unsigned char messageType;
+            unsigned char padding;
+            unsigned short numberOfRectangles;
+        } CRFBFramebufferUpdate;
+        
+        CRFBFramebufferUpdate packet;
+        recv(client->socket, &packet, sizeof(CRFBFramebufferUpdate), 0);
 
-        while (len < size) {
-            int n = recv(client->socket, buffer->data + len, size - len, 0);
+        crfb_short_to_little(&packet.numberOfRectangles);
+
+        for(int i = 0; i < packet.numberOfRectangles; ++i) {
+            typedef struct CRFBRectangle {
+                unsigned short xPosition;
+                unsigned short yPosition;
+                unsigned short width;
+                unsigned short height;
+                unsigned int ecodingType;
+            } CRFBRectangle;
+
+            CRFBRectangle rect;
+            recv(client->socket, &rect, sizeof(CRFBRectangle), 0);
+
+            crfb_ushort_to_little(&rect.xPosition);
+            crfb_ushort_to_little(&rect.yPosition);
+            crfb_ushort_to_little(&rect.width);
+            crfb_ushort_to_little(&rect.height);
+            crfb_uint_to_little(&rect.ecodingType);
+
+            printf("%d, %d, %d, %d, %d\n", rect.xPosition, rect.yPosition, rect.width, rect.height, rect.ecodingType);
+
+            if(rect.ecodingType == 0) {
+                unsigned int size = width * height * channels;
+                unsigned int len = 0;
+
+                while (len < size) {
+                    int n = recv(client->socket, buffer->data + len, size - len, 0);
+                    if (n <= 0) break;
+                    len += n;
+                }
+
+                for(int x = 0; x < width; ++x) {
+                    for(int y = 0; y < height; ++y) {
+                            int* array = (int*) buffer->data;
+                            int* pixel = &array[x + y*width];
+
+                            unsigned int red =   (*pixel & 0x000000ff) >> 0;
+                            unsigned int green = (*pixel & 0x0000ff00) >> 8;
+                            unsigned int blue =  (*pixel & 0x00ff0000) >> 16;
+                        
+                            *pixel = 0xff000000 | (red << 16) | (green << 8)  | blue;
+                    }
+                }
             
-            if (n <= 0) break;
-            
-            len += n;
+                char fileName[50] = { '\0' };  
+                sprintf(fileName, "sample_%d.png", frame);
+                stbi_write_png("sample.png", width, height, channels, buffer->data, width*channels);
+            } else {
+                printf("Unsuported rectangle encoding\n");
+            }
         }
-    
-        char fileName[50] = { '\0' };  
-        sprintf(fileName, "sample_%d.png", frame);
-        stbi_write_png("sample_.png", width, height, channels, buffer->data, width*channels);
     }
 
     crfb_free_frame_buffer(buffer);

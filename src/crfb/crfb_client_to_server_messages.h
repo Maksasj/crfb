@@ -63,21 +63,20 @@ void crfb_client_send_framebuffer_update_request_message(
 
     FramebufferUpdateRequest req;
     req.messageType = FRAMEBUFFER_UPDATE_REQUEST;
-    req.incremental = 0; // Lost
+    req.incremental = incremental;
 
     req.xPosition = xPosition;
     req.yPosition = yPosition;
     req.width = width;
     req.height = height;
 
-    crfb_short_to_little(&req.xPosition);
-    crfb_short_to_little(&req.yPosition);
-    crfb_short_to_little(&req.width);
-    crfb_short_to_little(&req.height);
+    crfb_ushort_to_little(&req.xPosition);
+    crfb_ushort_to_little(&req.yPosition);
+    crfb_ushort_to_little(&req.width);
+    crfb_ushort_to_little(&req.height);
 
-    if(send(client->socket, &req, sizeof(FramebufferUpdateRequest), MSG_DONTWAIT) == -1) {
+    if(send(client->socket, &req, sizeof(FramebufferUpdateRequest), 0) == -1)
         fprintf(stderr,"ERROR failed to send packet to server\n");
-    }
 }
 
 #endif
