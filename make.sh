@@ -1,1 +1,1 @@
-cmake --build build && ./build/examples/crfp_example_0 > result.txt
+cmake --build build && ./build/examples/crfb_example_0 > result.txt

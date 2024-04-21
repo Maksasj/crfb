@@ -1,0 +1,2 @@
+FILE(GLOB_RECURSE CRFB_SRC_FILES *.c)
+add_library(crfb STATIC ${CRFB_SRC_FILES})
