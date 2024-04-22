@@ -1,3 +1,6 @@
 [submodule "3dparty/stb"]
 	path = 3dparty/stb
 	url = https://github.com/Maksasj/stb
+[submodule "3dparty/SDL"]
+	path = 3dparty/SDL
+	url = https://github.com/Maksasj/SDL
