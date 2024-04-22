@@ -7,10 +7,10 @@
 #include "crfb_utils.h"
 
 typedef enum CRFBServerToClientMessage {
-    FRAMEBUFFER_UPDATE = 0,
-    SET_COLOUR_MAP_ENTRIES = 1,
-    BELL = 2,
-    SERVER_CUT_TEXT = 3
+    FRAMEBUFFER_UPDATE = 0,         // [x]
+    SET_COLOUR_MAP_ENTRIES = 1,     // [ ]
+    BELL = 2,                       // [ ]
+    SERVER_CUT_TEXT = 3             // [ ]
 } CRFBServerToClientMessage;
 
 typedef struct CRFBFramebufferUpdate {

@@ -18,9 +18,15 @@ typedef struct CRFBClient {
 CRFBClient* crfb_new_client() {
     CRFBClient* client = (CRFBClient*) malloc(sizeof(CRFBClient));
 
-    if ((client->socket = socket(AF_INET, SOCK_STREAM,0))< 0){
+    if ((client->socket = socket(AF_INET, SOCK_STREAM, 0))< 0){
         fprintf(stderr, "ERROR cannot crfb client socket.\n");
         exit(1);
+    }
+
+    int opt = 1;
+    if (setsockopt(client->socket, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt)) == -1) {
+        perror("setsockopt");
+        return -1;
     }
 
     return client;

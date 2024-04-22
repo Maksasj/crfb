@@ -2,6 +2,11 @@
 
 read:
 
+Todo:
+    - Rectangle Api
+    - Incremental rectangles {}
+    - CopyRect Encoding
+
 https://slyd0g.medium.com/scanning-the-entire-internet-unauthenticated-vnc-servers-f4780279d6b1
 https://datatracker.ietf.org/doc/html/rfc6143#page-8
 https://github.com/rfbproto/rfbproto/blob/master/rfbproto.rst#setencodings

@@ -1,18 +1,21 @@
 #ifndef _CRFB_CLIENT_TO_SERVER_MESSAGES_H_
 #define _CRFB_CLIENT_TO_SERVER_MESSAGES_H_
 
+#define XK_MISCELLANY
+#include <X11/keysymdef.h>
+
 #include "crfb_backend.h"
 #include "crfb_client.h"
 
 #include "crfb_encoding.h"
 
 typedef enum CRFBCLientToServerMessage {
-    SET_PIXEL_FORMAT = 0,
-    SET_ENCODINGS = 2,
-    FRAMEBUFFER_UPDATE_REQUEST = 3,
-    KEY_EVENT = 4,
-    POINTER_EVENT = 5,
-    CLIENT_CUT_TEXT = 6
+    SET_PIXEL_FORMAT = 0,               // [ ]
+    SET_ENCODINGS = 2,                  // [x]
+    FRAMEBUFFER_UPDATE_REQUEST = 3,     // [x]
+    KEY_EVENT = 4,                      // [x]
+    POINTER_EVENT = 5,                  // [ ]
+    CLIENT_CUT_TEXT = 6                 // [ ]
 } CRFBCLientToServerMessage;
 
 void crfb_client_send_set_encodings_message(CRFBClient* client, CRFBEncoding* encodings, unsigned long count) {
@@ -48,6 +51,7 @@ void crfb_client_send_set_encodings_message(CRFBClient* client, CRFBEncoding* en
     free(buffer);
 }
 
+// Todo impleemnt incremental
 void crfb_client_send_framebuffer_update_request_message(
     CRFBClient* client, 
     unsigned char incremental, 
@@ -81,6 +85,50 @@ void crfb_client_send_framebuffer_update_request_message(
     crfb_ushort_to_little(&req.height);
 
     if(send(client->socket, &req, sizeof(FramebufferUpdateRequest), 0) == -1)
+        fprintf(stderr,"ERROR failed to send packet to server\n");
+}
+
+void crfb_client_send_key_event_message(CRFBClient* client, unsigned char downFlag, unsigned int key) {
+    typedef struct CRFBKeyEvent {
+        unsigned char messageType;
+        unsigned char downFlag;
+        unsigned char padding[2];
+        unsigned int key;
+    } CRFBKeyEvent;
+
+    CRFBKeyEvent req;
+    req.messageType = KEY_EVENT;
+    req.downFlag = downFlag;
+    
+    req.padding[0] = 0;
+    req.padding[1] = 0;
+
+    req.key = key;
+
+    crfb_uint_to_little(&req.key);
+
+    if(send(client->socket, &req, sizeof(CRFBKeyEvent), 0) == -1)
+        fprintf(stderr,"ERROR failed to send packet to server\n");
+}
+
+void crfb_client_send_pointer_event_message(CRFBClient* client, unsigned char buttonMask, unsigned short xPosition, unsigned short yPosition) {
+    typedef struct CRFBPointerEvent {
+        unsigned char messageType;
+        unsigned char buttonMask;
+        unsigned short xPosition;
+        unsigned short yPosition;
+    } CRFBPointerEvent;
+
+    CRFBPointerEvent req;
+    req.messageType = POINTER_EVENT;
+    req.buttonMask = buttonMask;
+    req.xPosition = xPosition;
+    req.yPosition = yPosition;
+
+    crfb_ushort_to_little(&req.xPosition);
+    crfb_ushort_to_little(&req.yPosition);
+
+    if(send(client->socket, &req, sizeof(CRFBPointerEvent), 0) == -1)
         fprintf(stderr,"ERROR failed to send packet to server\n");
 }
 
