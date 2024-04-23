@@ -19,6 +19,7 @@ typedef struct SDLContext {
     SDL_Renderer* renderer;
 	SDL_Texture* texture;
 } SDLContext;
+
 void *pixels;
 
 SDLContext setup_sdl() {
@@ -37,8 +38,8 @@ SDLContext setup_sdl() {
 		WINDOW_HEIGHT);
 
     int pitch;
-    SDL_LockTexture(context.texture, &window_rect, &pixels, &pitch);
 
+    SDL_LockTexture(context.texture, &window_rect, &pixels, &pitch);
 	SDL_SetHintWithPriority(SDL_HINT_MOUSE_RELATIVE_MODE_WARP, "1", SDL_HINT_OVERRIDE);
 
 	return context;
@@ -74,83 +75,82 @@ int main(){
     CRFBEncoding encodings[] = {
         RAW_ENCODING,
 		COPYRECT_ENCODING,
-        DESKTOP_SIZE_PSEUDO_ENCODING, 
+        DESKTOP_SIZE_PSEUDO_ENCODING
     };
     crfb_client_send_set_encodings_message(client, encodings, 3);
 
     unsigned int width = serverInit.framebufferWidth;
     unsigned int height = serverInit.framebufferHeight;
     unsigned int channels = serverInit.pixelFormat.bitsPerPixel / 8;
-
     CRFBFramebuffer* buffer = crfb_create_frame_buffer(width, height, channels);
-
-	unsigned long long frame = 0;
 
 	unsigned char exit = 0;
 	while (!exit) {
-		++frame;
-
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
-			switch (event.type) {
-				case SDL_EVENT_QUIT: {
-					exit = 1;
-					break;
-				}
-
-				
-			}
-
-			if(frame % 5 == 0) {
-				float xPosition, yPosition;
-				unsigned int buttons = SDL_GetMouseState(&xPosition, &yPosition);
-				crfb_client_send_pointer_event_message(client, 0, xPosition, yPosition);
-			}
-
-			// crfb_client_send_key_event_message(client, 1, XK_Up);
-			// crfb_client_send_key_event_message(client, 0, XK_Up);
-
-			if(frame % 30 == 0) {
-				crfb_client_send_framebuffer_update_request_message(client, 0, 0, 0, SERVER_WIDTH, SERVER_HEIGHT);
-				CRFBFramebufferUpdate update = crfb_client_recv_framebuffer_update_message(client);
-				for(int i = 0; i < update.numberOfRectangles; ++i) {
-					CRFBRectangle rect = crfb_client_recv_rectangle(client);
-
-					printf("%d, %d, %d, %d, %d\n", rect.xPosition, rect.yPosition, rect.width, rect.height, rect.ecodingType);
-
-					if(rect.ecodingType == RAW_ENCODING) {
-						crfb_client_recv_raw_encoding(client, buffer);
-
-						SDL_RenderClear(context.renderer);
-						int pitch;
-						SDL_LockTexture(context.texture, &window_rect, &pixels, &pitch);
-
-						for(int x = 0; x < WINDOW_WIDTH; ++x) {
-							for(int y = 0; y < WINDOW_HEIGHT; ++y) {
-								int* array = (int*) buffer->data;
-								int pixel = array[x * RATIO+ y*buffer->width * RATIO];
-
-								((unsigned int*) pixels)[x + y*WINDOW_WIDTH] = pixel;
-							}
-						}
-
-						SDL_UnlockTexture(context.texture);
-
-						SDL_RenderTexture(context.renderer, context.texture, &window_rect_f, &window_rect_f);
-						SDL_RenderPresent(context.renderer);
-					} else if(rect.ecodingType == COPYRECT_ENCODING) {
-						printf("Copyrect encoding !\n");
-						return 1;
-					} else if(rect.ecodingType == DESKTOP_SIZE_PSEUDO_ENCODING) {
-						printf("Desktop size pseudo encoding\n");
-					} else {
-						printf("Unsuported rectangle encoding %x\n", rect.ecodingType);
-						// return 1;
-					}
-				}
+			if(event.type == SDL_EVENT_QUIT) {
+				exit = 1;
+				break;
+			} else if(event.type == SDL_EVENT_KEY_DOWN) {
+				crfb_client_send_key_event_message(client, 1, event.key.keysym.sym);
+				break;
+			} else if(event.type == SDL_EVENT_KEY_UP) {
+				crfb_client_send_key_event_message(client, 0, event.key.keysym.sym);
+				break;
 			}
 		}
+		
+		static float xPosition, yPosition;
+		float newX, newY;
+		unsigned int buttons = SDL_GetMouseState(&newX, &newY);
+
+		if(xPosition != newX || yPosition != newY) {
+			printf("%x \n", buttons);
+			crfb_client_send_pointer_event_message(client, buttons, xPosition, yPosition);
+			xPosition = newX;
+			yPosition = newY;
+		}
+
+		int pitch;
+		SDL_RenderClear(context.renderer);
+		SDL_LockTexture(context.texture, &window_rect, &pixels, &pitch);
+		
+		memcpy(pixels, buffer->data, (buffer->width * buffer->height) * 4);
+
+		SDL_UnlockTexture(context.texture);
+		SDL_RenderTexture(context.renderer, context.texture, &window_rect_f, &window_rect_f);
+		SDL_RenderPresent(context.renderer);
+
+		printf("Sending request !\n");
+
+		crfb_client_send_framebuffer_update_request_message(client, 1, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+		CRFBFramebufferUpdate update = crfb_client_recv_framebuffer_update_message(client);
+
+		printf("CRFBFramebufferUpdate receiving %d rectangles\n", update.numberOfRectangles);
+
+		for(int i = 0; i < update.numberOfRectangles; ++i) {
+			CRFBRectangle rect = crfb_client_recv_rectangle(client);
+
+			if(rect.ecodingType == RAW_ENCODING) {
+				crfb_client_recv_raw_encoding(client, buffer, &rect);
+			} else if(rect.ecodingType == COPYRECT_ENCODING) {
+				crfb_client_recv_copy_rect_encoding(client, buffer, &rect);
+				printf("Copyrect encoding !\n");
+			} else if(rect.ecodingType == DESKTOP_SIZE_PSEUDO_ENCODING) {
+				printf("Desktop size pseudo encoding\n");
+			} else {
+				printf("Unsuported rectangle encoding %x\n", rect.ecodingType);
+				return 1;
+			}
+		}
+
+		printf("done !\n");
 	}
+
+	crfb_free_frame_buffer(buffer);
+
+	crfb_client_close(client);
+	crfb_free_client(client);
 
     SDL_DestroyTexture(context.texture);
     SDL_DestroyRenderer(context.renderer);

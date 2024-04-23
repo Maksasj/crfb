@@ -52,7 +52,7 @@ int main(int argc, char *argv[]){
             printf("%d, %d, %d, %d, %d\n", rect.xPosition, rect.yPosition, rect.width, rect.height, rect.ecodingType);
 
             if(rect.ecodingType == RAW_ENCODING) {
-                crfb_client_recv_raw_encoding(client, buffer);
+                crfb_client_recv_raw_encoding(client, buffer, &rect);
 
                 char fileName[50] = { '\0' };  
                 sprintf(fileName, "sample_%d.png", frame);

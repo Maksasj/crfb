@@ -15,8 +15,6 @@ typedef struct CRFBFramebuffer {
 CRFBFramebuffer* crfb_create_frame_buffer(unsigned int w, unsigned int h, unsigned char bytesPerPixel) {
     CRFBFramebuffer* frameBuffer = (CRFBFramebuffer*) malloc(sizeof(CRFBFramebuffer));
 
-    printf("%d", w * h * bytesPerPixel);
-
     frameBuffer->data = malloc(w * h * bytesPerPixel);
     frameBuffer->width = w;
     frameBuffer->height = h;

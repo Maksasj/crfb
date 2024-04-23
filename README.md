@@ -3,9 +3,10 @@
 read:
 
 Todo:
-    - Rectangle Api
-    - Incremental rectangles {}
-    - CopyRect Encoding
+    - [x] Rectangle Api
+    - [x] Incremental rectangles
+    - [x] CopyRect Encoding
+    - [ ] Proper keys
 
 https://slyd0g.medium.com/scanning-the-entire-internet-unauthenticated-vnc-servers-f4780279d6b1
 https://datatracker.ietf.org/doc/html/rfc6143#page-8

@@ -2,7 +2,7 @@
 #define _CRFB_RECTANGLE_H_
 
 #include "crfb_client.h"
-#include "crfb_encoding.h"
+// #include "crfb_encoding.h"
 #include "crfb_utils.h"
 
 typedef struct CRFBRectangle {
@@ -10,7 +10,7 @@ typedef struct CRFBRectangle {
     unsigned short yPosition;
     unsigned short width;
     unsigned short height;
-    CRFBEncoding ecodingType;
+    int ecodingType;// Todo
 } CRFBRectangle;
 
 CRFBRectangle crfb_client_recv_rectangle(CRFBClient* client) {

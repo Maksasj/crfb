@@ -26,7 +26,7 @@ CRFBClient* crfb_new_client() {
     int opt = 1;
     if (setsockopt(client->socket, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt)) == -1) {
         perror("setsockopt");
-        return -1;
+        exit(1);
     }
 
     return client;
