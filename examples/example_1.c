@@ -155,23 +155,31 @@ int main(){
 			if(event.type == SDL_EVENT_QUIT) {
 				app.exitFlag = 1;
 				break;
-			} else if(event.type == SDL_EVENT_KEY_DOWN) {
-				crfb_client_send_key_event_message(client, 1, event.key.keysym.sym);
+			} else if(event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_KEY_UP) {
+				unsigned int key = event.key.keysym.sym;
 
-				// "SDLK_TAB"
-				// "SDLK_CAPSLOCK"
-				// "SDLK_LSHIFT"
-				// "SDLK_LCTRL"
-				// "SDLK_LALT"
-				// "SDLK_KP_ENTER"
-				// "SDLK_BACKSPACE"
-				if(event.key.keysym.sym == SDLK_LSHIFT) {
-					printf("Poggers !\n");
-				}
+				if(key == SDLK_TAB) key = XK_Tab;
+				if(key == SDLK_CAPSLOCK) key = XK_Caps_Lock;
 
-				break;
-			} else if(event.type == SDL_EVENT_KEY_UP) {
-				crfb_client_send_key_event_message(client, 0, event.key.keysym.sym);
+				if(key == SDLK_LSHIFT) key = XK_Shift_L;
+				if(key == SDLK_RSHIFT) key = XK_Shift_R;
+
+				if(key == SDLK_LCTRL) key = XK_Control_L;
+				if(key == SDLK_RCTRL) key = XK_Control_R;
+
+				if(key == SDLK_LALT) key = XK_Alt_L;
+				if(key == SDLK_RALT) key = XK_Alt_R;
+
+				if(key == SDLK_KP_ENTER) key = XK_KP_Enter;
+
+				if(key == SDLK_BACKSPACE) key = XK_BackSpace;
+
+				if(event.type == SDL_EVENT_KEY_DOWN)
+					crfb_client_send_key_event_message(client, 1, key);
+
+				if(event.type == SDL_EVENT_KEY_UP)
+					crfb_client_send_key_event_message(client, 0, key);
+
 				break;
 			}
 			
