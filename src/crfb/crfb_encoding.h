@@ -87,10 +87,10 @@ void crfb_client_recv_copy_rect_encoding(CRFBClient* client, CRFBFramebuffer* bu
 
     void* pixels = malloc(size);
 
-    for(int y = 0; y < rect->height; ++y) {
+    for(int y = 0; y < height; ++y) {
         memcpy(
             pixels + ((y * width) * 4),
-            buffer + (encoding.srcXPosition + (y + encoding.srcYPosition) * buffer->width) * 4,
+            buffer->data + (encoding.srcXPosition + (y + encoding.srcYPosition) * buffer->width) * 4,
             width * 4
         );
     }
@@ -101,7 +101,6 @@ void crfb_client_recv_copy_rect_encoding(CRFBClient* client, CRFBFramebuffer* bu
             pixels + (y * width) * 4, 
             width * 4
         );
-        printf("COPY RECT\n");
     }
 
     free(pixels);

@@ -3,6 +3,7 @@
 
 #define XK_MISCELLANY
 #include <X11/keysymdef.h>
+#include <X11/Xlib.h>
 
 #include "crfb_backend.h"
 #include "crfb_client.h"
