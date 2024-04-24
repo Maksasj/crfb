@@ -1,5 +1,6 @@
 #include <SDL3/SDL.h>
 #include <pthread.h>
+
 #include "crfb/crfb.h"
 
 #define SERVER_WIDTH 	(800)
@@ -11,7 +12,12 @@
 #define WINDOW_HEIGHT 	(SERVER_HEIGHT / RATIO)
 
 const SDL_FRect window_rect_f = {0.0f, 0.0f, WINDOW_WIDTH, WINDOW_HEIGHT};
-const SDL_Rect window_rect = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
+const SDL_Rect window_rect = 	{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
+
+typedef enum CRFBResult {
+	CRFB_OK,
+	CRFB_FAILED
+} CRFBResult;
 
 typedef struct SDLContext {
 	SDL_Window* window;
@@ -19,18 +25,25 @@ typedef struct SDLContext {
 	SDL_Texture* texture;
 } SDLContext;
 
-void *pixels;
+typedef struct AppContext {
+	SDLContext* context;
+	void *pixels;
 
-SDLContext setup_sdl() {
+	CRFBClient* client;
+	CRFBFramebuffer* buffer;
+	unsigned char exitFlag;
+} AppContext;
+
+CRFBResult setup_sdl(AppContext* app) {
 	SDL_Init(SDL_INIT_EVERYTHING);
 
-	SDLContext context;
+	SDLContext* context = (SDLContext*) malloc(sizeof(SDLContext));
 
-	context.window = SDL_CreateWindow("CRFB Client [192.168.1.116:5900]", WINDOW_WIDTH, WINDOW_HEIGHT, 0);
-	context.renderer = SDL_CreateRenderer(context.window, NULL, 0);
+	context->window = SDL_CreateWindow("CRFB Client [192.168.1.116:5900]", WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+	context->renderer = SDL_CreateRenderer(context->window, NULL, 0);
 
-	context.texture = SDL_CreateTexture(
-		context.renderer, 
+	context->texture = SDL_CreateTexture(
+		context->renderer, 
 		SDL_PIXELFORMAT_ABGR8888, 
 		SDL_TEXTUREACCESS_STREAMING, 
 		WINDOW_WIDTH, 
@@ -38,18 +51,13 @@ SDLContext setup_sdl() {
 
     int pitch;
 
-    SDL_LockTexture(context.texture, &window_rect, &pixels, &pitch);
+    SDL_LockTexture(context->texture, &window_rect, &app->pixels, &pitch);
 	SDL_SetHintWithPriority(SDL_HINT_MOUSE_RELATIVE_MODE_WARP, "1", SDL_HINT_OVERRIDE);
 
-	return context;
-}
+	app->context = context;
 
-typedef struct AppContext {
-	SDLContext* context;
-	CRFBClient* client;
-	CRFBFramebuffer* buffer;
-	unsigned char exitFlag;
-} AppContext;
+	return CRFB_OK;
+}
 
 void* handle_mouse_input(void *ptr) {
 	AppContext* app = (AppContext*) ptr;
@@ -61,7 +69,6 @@ void* handle_mouse_input(void *ptr) {
 		unsigned int buttons = SDL_GetMouseState(&newX, &newY);
 
 		if(xPosition != newX || yPosition != newY) {
-			// printf("%x \n", buttons);
 			crfb_client_send_pointer_event_message(client, buttons, xPosition, yPosition);
 			xPosition = newX;
 			yPosition = newY;
@@ -106,7 +113,7 @@ void* screen_update_thread(void* ptr) {
 	return ptr;
 }
 
-int main(){
+CRFBResult setup_crfb(AppContext* app) {
 	char adress[] = "192.168.1.116";
 	unsigned int port = 5900;
 
@@ -118,7 +125,8 @@ int main(){
 
     CRFBProtocolVersion version = crfb_client_recv_server_handshake(client);
     if(version != CRFB_003_008) 
-		return 1;
+		return CRFB_FAILED;
+
     crfb_client_send_handshake(client, CRFB_003_008);
 
     crfb_client_get_security_types(client);
@@ -126,7 +134,7 @@ int main(){
 
     CRFBSecurityResult result = crfb_client_recv_security_result(client);
 	if(result != CRFB_SECURITY_RESULT_OK)
-		return 1;
+		return CRFB_FAILED;
 
     crfb_client_send_client_init(client, 0);
 
@@ -148,78 +156,93 @@ int main(){
     unsigned int width = serverInit.framebufferWidth;
     unsigned int height = serverInit.framebufferHeight;	
     unsigned int channels = serverInit.pixelFormat.bitsPerPixel / 8;
-    CRFBFramebuffer* buffer = crfb_create_frame_buffer(width, height, channels);
 
-	SDLContext context = setup_sdl();
+	app->client = client;
+	app->buffer = crfb_create_frame_buffer(width, height, channels);
 
+	return CRFB_OK;
+}
+
+void haandle_sdl_events(AppContext* app) {
+	SDL_Event event;
+	while (SDL_PollEvent(&event)) {
+		if(event.type == SDL_EVENT_QUIT) {
+			app->exitFlag = 1;
+			break;
+		} else if(event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_KEY_UP) {
+			unsigned int key = event.key.keysym.sym;
+
+			if(key == SDLK_TAB) key = XK_Tab;
+			if(key == SDLK_CAPSLOCK) key = XK_Caps_Lock;
+
+			if(key == SDLK_LSHIFT) key = XK_Shift_L;
+			if(key == SDLK_RSHIFT) key = XK_Shift_R;
+
+			if(key == SDLK_LCTRL) key = XK_Control_L;
+			if(key == SDLK_RCTRL) key = XK_Control_R;
+
+			if(key == SDLK_LALT) key = XK_Alt_L;
+			if(key == SDLK_RALT) key = XK_Alt_R;
+
+			if(key == SDLK_KP_ENTER) key = XK_KP_Enter;
+
+			if(key == SDLK_BACKSPACE) key = XK_BackSpace;
+
+			if(event.type == SDL_EVENT_KEY_DOWN)
+				crfb_client_send_key_event_message(app->client, 1, key);
+
+			if(event.type == SDL_EVENT_KEY_UP)
+				crfb_client_send_key_event_message(app->client, 0, key);
+
+			break;
+		}
+	}
+}
+
+int main(){
 	AppContext app;
-	app.context = &context;
-	app.client = client;
-	app.buffer = buffer;
 	app.exitFlag = 0;
 
-	pthread_t mouseThread, screenUpdateThread;
+	if(setup_crfb(&app) != CRFB_OK) {
+		CRFB_LOG(CRFB_ERROR, "Failed to start crfb");
+		return 1;
+	}
 
+	if(setup_sdl(&app) != CRFB_OK) {
+		CRFB_LOG(CRFB_ERROR, "Failed to start sdl");
+		return 1;
+	}
+
+	pthread_t mouseThread, screenUpdateThread;
 	CRFB_LOG(CRFB_INFO, "Started mouse thread");
     pthread_create(&mouseThread, NULL, *handle_mouse_input, (void *) &app);
 	CRFB_LOG(CRFB_INFO, "Started screen update thread");
     pthread_create(&screenUpdateThread, NULL, *screen_update_thread, (void *) &app);
 
 	while (!app.exitFlag) {
-		SDL_Event event;
-		while (SDL_PollEvent(&event)) {
-			if(event.type == SDL_EVENT_QUIT) {
-				app.exitFlag = 1;
-				break;
-			} else if(event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_KEY_UP) {
-				unsigned int key = event.key.keysym.sym;
+		haandle_sdl_events(&app);
 
-				if(key == SDLK_TAB) key = XK_Tab;
-				if(key == SDLK_CAPSLOCK) key = XK_Caps_Lock;
-
-				if(key == SDLK_LSHIFT) key = XK_Shift_L;
-				if(key == SDLK_RSHIFT) key = XK_Shift_R;
-
-				if(key == SDLK_LCTRL) key = XK_Control_L;
-				if(key == SDLK_RCTRL) key = XK_Control_R;
-
-				if(key == SDLK_LALT) key = XK_Alt_L;
-				if(key == SDLK_RALT) key = XK_Alt_R;
-
-				if(key == SDLK_KP_ENTER) key = XK_KP_Enter;
-
-				if(key == SDLK_BACKSPACE) key = XK_BackSpace;
-
-				if(event.type == SDL_EVENT_KEY_DOWN)
-					crfb_client_send_key_event_message(client, 1, key);
-
-				if(event.type == SDL_EVENT_KEY_UP)
-					crfb_client_send_key_event_message(client, 0, key);
-
-				break;
-			}
-			
-		}
-		
 		int pitch;
-		SDL_RenderClear(context.renderer);
-		SDL_LockTexture(context.texture, &window_rect, &pixels, &pitch);
+		SDL_RenderClear(app.context->renderer);
+		SDL_LockTexture(app.context->texture, &window_rect, &app.pixels, &pitch);
 		
-		memcpy(pixels, buffer->data, (buffer->width * buffer->height) * 4);
+		memcpy(app.pixels, app.buffer->data, (app.buffer->width * app.buffer->height) * 4);
 
-		SDL_UnlockTexture(context.texture);
-		SDL_RenderTexture(context.renderer, context.texture, &window_rect_f, &window_rect_f);
-		SDL_RenderPresent(context.renderer);
+		SDL_UnlockTexture(app.context->texture);
+		SDL_RenderTexture(app.context->renderer, app.context->texture, &window_rect_f, &window_rect_f);
+		SDL_RenderPresent(app.context->renderer);
 	}
 
-	crfb_free_frame_buffer(buffer);
+	crfb_free_frame_buffer(app.buffer);
 
-	crfb_client_close(client);
-	crfb_free_client(client);
+	crfb_client_close(app.client);
+	crfb_free_client(app.client);
 
-    SDL_DestroyTexture(context.texture);
-    SDL_DestroyRenderer(context.renderer);
-    SDL_DestroyWindow(context.window);
+    SDL_DestroyTexture(app.context->texture);
+    SDL_DestroyRenderer(app.context->renderer);
+    SDL_DestroyWindow(app.context->window);
+
+	free(app.context);
 
     return 0;
 }
