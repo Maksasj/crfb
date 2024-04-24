@@ -163,7 +163,7 @@ CRFBResult setup_crfb(AppContext* app) {
 	return CRFB_OK;
 }
 
-void haandle_sdl_events(AppContext* app) {
+void handle_sdl_events(AppContext* app) {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		if(event.type == SDL_EVENT_QUIT) {
@@ -220,7 +220,7 @@ int main(){
     pthread_create(&screenUpdateThread, NULL, *screen_update_thread, (void *) &app);
 
 	while (!app.exitFlag) {
-		haandle_sdl_events(&app);
+		handle_sdl_events(&app);
 
 		int pitch;
 		SDL_RenderClear(app.context->renderer);
