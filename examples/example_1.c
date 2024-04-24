@@ -1,5 +1,6 @@
 #include <SDL3/SDL.h>
 #include <pthread.h>
+#include <sys/select.h>
 
 #include "crfb/crfb.h"
 
@@ -73,6 +74,39 @@ void* handle_mouse_input(void *ptr) {
     return ptr;
 }
 
+void empty_recv_buffer(int sockfd) {
+	CRFB_LOG(CRFB_INFO, "Emptying recv buffer, resetting stream");
+
+    char buffer[1024];
+    int bytes = 0;
+
+    fd_set read_fds;
+    struct timeval tv;
+    int retval;
+
+    /* Watch sockfd to see when it has input. */
+    FD_ZERO(&read_fds);
+    FD_SET(sockfd, &read_fds);
+
+    /* Wait up to one second. */
+    tv.tv_sec = 0;
+    tv.tv_usec = 500000;
+
+    do {
+        retval = select(sockfd + 1, &read_fds, NULL, NULL, &tv);
+        if (retval == -1) {
+            perror("select()");
+            return;
+        } else if (retval) {
+            bytes = recv(sockfd, buffer, sizeof(buffer), 0);
+        } else {
+            /* No data within one second. */
+            printf("No data within one second.\n");
+            return;
+        }
+    } while (bytes > 0);
+}
+
 void* screen_update_thread(void* ptr) {
 	AppContext* app = (AppContext*) ptr;
 	CRFBClient* client = app->client;
@@ -96,7 +130,9 @@ void* screen_update_thread(void* ptr) {
 
 			if(crfb_client_valid_rectangle(&rect, WINDOW_WIDTH, WINDOW_HEIGHT) != CRFB_OK) {
 				CRFB_LOG(CRFB_ERROR, "Received invalid rectangle [%d] %d %d %d %d %d", i, rect.xPosition, rect.yPosition, rect.width, rect.height, rect.ecodingType);
-				continue;
+				empty_recv_buffer(client->socket);
+				break;
+				// continue;
 			}
 
 			CRFB_LOG(CRFB_INFO, "Received rectangle [%d] %d %d %d %d %d", i, rect.xPosition, rect.yPosition, rect.width, rect.height, rect.ecodingType);
@@ -152,10 +188,10 @@ CRFBResult setup_crfb(AppContext* app) {
 
     CRFBEncoding encodings[] = {
         RAW_ENCODING,
-		// COPYRECT_ENCODING //,
-        // DESKTOP_SIZE_PSEUDO_ENCODING
+		COPYRECT_ENCODING,
+        DESKTOP_SIZE_PSEUDO_ENCODING
     };
-    crfb_client_send_set_encodings_message(client, encodings, 1);
+    crfb_client_send_set_encodings_message(client, encodings, 3);
 
     unsigned int width = serverInit.framebufferWidth;
     unsigned int height = serverInit.framebufferHeight;	

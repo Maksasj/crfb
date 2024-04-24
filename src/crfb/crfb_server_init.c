@@ -43,16 +43,23 @@ void crfb_printify_server_init(CRFBServerInit serverInit) {
 CRFBTightServerInitExt crfb_client_recv_tight_server_init_extension(CRFBClient* client) {
     CRFBTightServerInitExt ext;
 
-    int len = recv(client->socket, &ext.numberOfServerMessages, sizeof(unsigned short), 0);
-    len = recv(client->socket, &ext.numberOfClientMessages, sizeof(unsigned short), 0);
-    len = recv(client->socket, &ext.numberOfEncodings, sizeof(unsigned short), 0);
+    if(recv(client->socket, &ext.numberOfServerMessages, sizeof(unsigned short), 0) <= 0)
+        CRFB_LOG(CRFB_ERROR, "Failed to recv tight server init extension numberOfServerMessages");
+
+    if(recv(client->socket, &ext.numberOfClientMessages, sizeof(unsigned short), 0) <= 0)
+        CRFB_LOG(CRFB_ERROR, "Failed to recv tight server init extension numberOfClientMessages");
+
+    if(recv(client->socket, &ext.numberOfEncodings, sizeof(unsigned short), 0) <= 0)
+        CRFB_LOG(CRFB_ERROR, "Failed to recv tight server init extension numberOfEncodings");
 
     crfb_short_to_little(&ext.numberOfServerMessages);
     crfb_short_to_little(&ext.numberOfClientMessages);
     crfb_short_to_little(&ext.numberOfEncodings);
 
     char padding[2] = { 0 };
-    len = recv(client->socket, padding, 2, 0);
+
+    if(recv(client->socket, padding, 2, 0) <= 0)
+        CRFB_LOG(CRFB_ERROR, "Failed to recv tight server init extension padding");
 
     return ext;
 }

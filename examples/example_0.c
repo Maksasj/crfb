@@ -49,7 +49,7 @@ int main(int argc, char *argv[]){
 
         for(int i = 0; i < update.numberOfRectangles; ++i) {
             CRFBRectangle rect;
-            crfb_client_recv_rectangle(&rect, client);
+            crfb_client_recv_rectangle(client, &rect);
 
             printf("%d, %d, %d, %d, %d\n", rect.xPosition, rect.yPosition, rect.width, rect.height, rect.ecodingType);
 
