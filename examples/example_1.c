@@ -80,18 +80,25 @@ void* screen_update_thread(void* ptr) {
 		crfb_client_send_framebuffer_update_request_message(client, 1, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 		CRFBFramebufferUpdate update = crfb_client_recv_framebuffer_update_message(client);
 
+		if(update.messageType != FRAMEBUFFER_UPDATE) {
+			CRFB_LOG(CRFB_ERROR, "Message type is not a FRAMEBUFFER_UPDATE %d", update.messageType);
+			app->exitFlag = 1;
+			break;
+		}
+
 		for(int i = 0; i < update.numberOfRectangles; ++i) {
 			CRFBRectangle rect = crfb_client_recv_rectangle(client);
+
+			CRFB_LOG(CRFB_INFO, "Receiving %d rectangles", update.numberOfRectangles);
 
 			if(rect.ecodingType == RAW_ENCODING) {
 				crfb_client_recv_raw_encoding(client, buffer, &rect);
 			} else if(rect.ecodingType == COPYRECT_ENCODING) {
 				crfb_client_recv_copy_rect_encoding(client, buffer, &rect);
 			} else if(rect.ecodingType == DESKTOP_SIZE_PSEUDO_ENCODING) {
-				printf("Desktop size pseudo encoding\n");
+				CRFB_LOG(CRFB_WARNING, "Desktop size pseudo encoding");
 			} else {
-				printf("Unsuported rectangle encoding %x\n", rect.ecodingType);
-				ptr;
+				CRFB_LOG(CRFB_ERROR, "Unsuported rectangle encoding %x", rect.ecodingType);
 			}
 		}
 	}
@@ -100,8 +107,14 @@ void* screen_update_thread(void* ptr) {
 }
 
 int main(){
+	char adress[] = "192.168.1.116";
+	unsigned int port = 5900;
+
 	CRFBClient* client = crfb_new_client();
-    crfb_client_connect(client, "192.168.1.116", 5900);
+	CRFB_LOG(CRFB_INFO, "Started CRFB client");
+
+    crfb_client_connect(client, adress, port);
+	CRFB_LOG(CRFB_INFO, "Connected to %s:%d serer", adress, port);
 
     CRFBProtocolVersion version = crfb_client_recv_server_handshake(client);
     if(version != CRFB_003_008) 
@@ -127,13 +140,13 @@ int main(){
 
     CRFBEncoding encodings[] = {
         RAW_ENCODING,
-		COPYRECT_ENCODING,
-        DESKTOP_SIZE_PSEUDO_ENCODING
+		COPYRECT_ENCODING //,
+        // DESKTOP_SIZE_PSEUDO_ENCODING
     };
-    crfb_client_send_set_encodings_message(client, encodings, 3);
+    crfb_client_send_set_encodings_message(client, encodings, 2);
 
     unsigned int width = serverInit.framebufferWidth;
-    unsigned int height = serverInit.framebufferHeight;
+    unsigned int height = serverInit.framebufferHeight;	
     unsigned int channels = serverInit.pixelFormat.bitsPerPixel / 8;
     CRFBFramebuffer* buffer = crfb_create_frame_buffer(width, height, channels);
 
@@ -146,7 +159,10 @@ int main(){
 	app.exitFlag = 0;
 
 	pthread_t mouseThread, screenUpdateThread;
+
+	CRFB_LOG(CRFB_INFO, "Started mouse thread");
     pthread_create(&mouseThread, NULL, *handle_mouse_input, (void *) &app);
+	CRFB_LOG(CRFB_INFO, "Started screen update thread");
     pthread_create(&screenUpdateThread, NULL, *screen_update_thread, (void *) &app);
 
 	while (!app.exitFlag) {

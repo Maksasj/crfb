@@ -5,22 +5,26 @@
 #include "crfb_utils.h"
 
 void crfb_client_run_tight_security_handshake(CRFBClient* client) {
-    char type = TIGHT_SECURITY_TYPE; // CHOOSEN SECURITY TYPE TIGHT
+    CRFB_LOG(CRFB_INFO, "Running Tight security handshake");
+
+    unsigned char type = TIGHT_SECURITY_TYPE;
 
     if(send(client->socket, &type, 1, 0) == -1)
         fprintf(stderr,"ERROR failed to send packet to server\n");
 
-    // Tunnel count
     unsigned int tunnelCount = 0;
-    int len = recv(client->socket, &tunnelCount, sizeof(tunnelCount), 0);
-    crfb_uint_to_little(&tunnelCount);
-    printf("Number of tunnels: '%d'\n", tunnelCount);
+    if(recv(client->socket, &tunnelCount, sizeof(tunnelCount), 0) <= 0)
+        CRFB_LOG(CRFB_ERROR, "Failed to recv tight security handshake tunnel count");
 
-    // Authentication types
     unsigned int authTypeCount = 0;
-    len = recv(client->socket, &authTypeCount, sizeof(authTypeCount), 0);
+    if(recv(client->socket, &authTypeCount, sizeof(authTypeCount), 0) <= 0)
+        CRFB_LOG(CRFB_ERROR, "Failed to recv tight security handshake authentication type count");
+
+    crfb_uint_to_little(&tunnelCount);
     crfb_uint_to_little(&authTypeCount);
-    printf("Authentication types: '%d'\n", authTypeCount);
+
+    CRFB_LOG(CRFB_INFO, "TightTight security tunnel count %d", tunnelCount);
+    CRFB_LOG(CRFB_INFO, "TightTight security authentication type count %d", authTypeCount);
 }
 
 #endif

@@ -10,7 +10,9 @@ typedef unsigned int CRFBSecurityResult;
 
 CRFBSecurityResult crfb_client_recv_security_result(CRFBClient* client) {
     CRFBSecurityResult result = 0;
-    int len = recv(client->socket, &result, sizeof(CRFBSecurityResult), 0);
+    if(recv(client->socket, &result, sizeof(CRFBSecurityResult), 0) <= 0)
+        CRFB_LOG(CRFB_ERROR, "Failed to recv security result");
+
     return result;
 }
 

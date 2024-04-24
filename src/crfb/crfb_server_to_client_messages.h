@@ -21,7 +21,9 @@ typedef struct CRFBFramebufferUpdate {
 
 CRFBFramebufferUpdate crfb_client_recv_framebuffer_update_message(CRFBClient* client) {
     CRFBFramebufferUpdate packet;
-    recv(client->socket, &packet, sizeof(CRFBFramebufferUpdate), 0);
+
+    if(recv(client->socket, &packet, sizeof(CRFBFramebufferUpdate), 0) <= 0)
+        CRFB_LOG(CRFB_ERROR, "Failed to recv framebuffer update message");
 
     crfb_ushort_to_little(&packet.numberOfRectangles);
 

@@ -13,7 +13,7 @@ typedef int CRFBEncoding;
 // #define RRE_ENCODING 			        ((CRFBEncoding) 2)
 // #define CORRE_ENCODING 			        ((CRFBEncoding) 4)
 // #define HEXTILE_ENCODING 		        ((CRFBEncoding) 5)
-#define ZLIB_ENCODING 			        ((CRFBEncoding) 6)
+// #define ZLIB_ENCODING 			        ((CRFBEncoding) 6)
 // #define TIGHT_ENCODING 			        ((CRFBEncoding) 7)
 // #define ZLIBHEX_ENCODING 		        ((CRFBEncoding) 8)
 // #define ZRLE_ENCODING 			        ((CRFBEncoding) 16)
@@ -35,12 +35,12 @@ void crfb_client_recv_raw_encoding(CRFBClient* client, CRFBFramebuffer* buffer, 
     while (len < size) {
         int n = recv(client->socket, pixels + len, size - len, 0);
 
-        if (n < 0) break;
+        if (n <= 0) {
+            CRFB_LOG(CRFB_WARNING, "Failed to recv raw encoding stream");
+            break;
+        }
 
         len += n;
-
-        if(len >= size)
-            break;
     }
 
     // Handle color corrections
@@ -74,9 +74,8 @@ void crfb_client_recv_copy_rect_encoding(CRFBClient* client, CRFBFramebuffer* bu
     } CopyRectEncoding;
 
     CopyRectEncoding encoding;
-    int n = recv(client->socket, &encoding, sizeof(CopyRectEncoding), 0);
-
-    if (n < 0) return;
+    if(recv(client->socket, &encoding, sizeof(CopyRectEncoding), 0) <= 0) 
+        CRFB_LOG(CRFB_ERROR, "Failed to recv copy rect encoding");
 
     crfb_ushort_to_little(&encoding.srcXPosition);
     crfb_ushort_to_little(&encoding.srcYPosition);

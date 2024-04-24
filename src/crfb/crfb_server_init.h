@@ -20,26 +20,33 @@ typedef struct CRFBServerInit {
 CRFBServerInit crfb_client_recv_server_init(CRFBClient* client) {
     CRFBServerInit serverInit;
 
-    int len = recv(client->socket, &serverInit.framebufferWidth,    sizeof(unsigned short), 0);
-    len = recv(client->socket,     &serverInit.framebufferHeight,   sizeof(unsigned short), 0);
+    if(recv(client->socket, &serverInit.framebufferWidth, sizeof(unsigned short), 0) <= 0)
+        CRFB_LOG(CRFB_ERROR, "Failed to recv server init framebufferWidth");
+
+    if(recv(client->socket, &serverInit.framebufferHeight, sizeof(unsigned short), 0) <= 0)
+        CRFB_LOG(CRFB_ERROR, "Failed to recv server init framebufferHeight");
 
     crfb_ushort_to_little(&serverInit.framebufferWidth);
     crfb_ushort_to_little(&serverInit.framebufferHeight);
 
     serverInit.pixelFormat = crfb_client_recv_pixel_format(client);
 
-    len = recv(client->socket,     &serverInit.nameLength,   sizeof(unsigned int), 0);
+    if(recv(client->socket, &serverInit.nameLength, sizeof(unsigned int), 0) <= 0)
+        CRFB_LOG(CRFB_ERROR, "Failed to recv server init nameLength");
+
     crfb_uint_to_little(&serverInit.nameLength);
 
     serverInit.nameString = (char*) malloc(serverInit.nameLength + 1);
     memset(serverInit.nameString, '\0', serverInit.nameLength + 1);
 
-    len = recv(client->socket, serverInit.nameString, serverInit.nameLength, 0);
+    if(recv(client->socket, serverInit.nameString, serverInit.nameLength, 0) <= 0)
+        CRFB_LOG(CRFB_ERROR, "Failed to recv server init nameString");
 
     return serverInit;
 }
 
 void crfb_printify_server_init(CRFBServerInit serverInit) {
+    /*
     printf("framebufferWidth: %d\n", serverInit.framebufferWidth);
     printf("framebufferHeight: %d\n", serverInit.framebufferHeight);
 
@@ -47,6 +54,7 @@ void crfb_printify_server_init(CRFBServerInit serverInit) {
 
     printf("nameLength: %d\n", serverInit.nameLength);
     printf("nameString: %s\n", serverInit.nameString);
+    */
 }
 
 typedef struct CRFBTightServerInitExt {

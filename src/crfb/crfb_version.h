@@ -11,16 +11,13 @@ typedef enum CRFBProtocolVersion {
     CRFB_LATEST = CRFB_003_008,
 
     CRFB_UNSUPPORTED,
-    CRFB_ERROR
 } CRFBProtocolVersion;
 
 CRFBProtocolVersion crfb_client_recv_server_handshake(CRFBClient* client) {
     char buffer[13] = { '\0' };
 
-    int len = recv(client->socket, buffer, 12, 0);
-
-    if(len <= 0)
-        return CRFB_ERROR;
+    if(recv(client->socket, buffer, 12, 0) <= 0)
+        CRFB_LOG(CRFB_ERROR, "Failed to recv server version");
 
     if(strcmp(buffer, "RFB 003.003\n") == 0)
         return CRFB_003_003;

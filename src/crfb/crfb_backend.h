@@ -11,4 +11,6 @@
 #include <unistd.h>
 #include <netinet/tcp.h>
 
+#include "crfb_logger.h"
+
 #endif

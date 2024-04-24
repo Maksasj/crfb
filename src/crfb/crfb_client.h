@@ -19,7 +19,7 @@ CRFBClient* crfb_new_client() {
     CRFBClient* client = (CRFBClient*) malloc(sizeof(CRFBClient));
 
     if ((client->socket = socket(AF_INET, SOCK_STREAM, 0))< 0){
-        fprintf(stderr, "ERROR cannot crfb client socket.\n");
+        CRFB_LOG(CRFB_ERROR, "Failed to create CRFB client socket");
         exit(1);
     }
 
@@ -40,12 +40,12 @@ void crfb_client_connect(CRFBClient* client, const char* ip, long port) {
     servaddr.sin_port = htons(port); // nurodomas portas
 
     if (inet_aton(ip, &servaddr.sin_addr) <= 0 ) {
-        fprintf(stderr,"ERROR #3: Invalid remote IP address.\n");
+        CRFB_LOG(CRFB_ERROR, "Invalid remote IP address");
         exit(1);
     }
 
     if (connect(client->socket, (struct sockaddr*)&servaddr,sizeof(servaddr))<0){
-        fprintf(stderr,"ERROR #4: error in connect().\n");
+        CRFB_LOG(CRFB_ERROR, "Failed to connect()");
         exit(1);
     }
 }
