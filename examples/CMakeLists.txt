@@ -12,7 +12,11 @@ FILE(GLOB CRFB_EXAMPLE_1_FILES example_1.c)
 add_executable(crfb_example_1 ${CRFB_EXAMPLE_1_FILES})
 target_link_libraries(crfb_example_1 crfb)
 target_link_libraries(crfb_example_1 SDL3::SDL3)
-# target_link_libraries(crfb_example_1 sdl)
+
+FILE(GLOB CRFB_EXAMPLE_2_FILES example_2.c)
+add_executable(crfb_example_2 ${CRFB_EXAMPLE_2_FILES})
+target_link_libraries(crfb_example_2 crfb)
+target_link_libraries(crfb_example_2 SDL3::SDL3)
 
 if(MINGW)
     target_link_libraries(crfb_example_0 ws2_32)

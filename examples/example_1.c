@@ -36,7 +36,16 @@ CRFBResult setup_sdl(AppContext* app) {
 	SDLContext* context = (SDLContext*) malloc(sizeof(SDLContext));
 
 	context->window = SDL_CreateWindow("CRFB Client [192.168.1.116:5900]", WINDOW_WIDTH, WINDOW_HEIGHT, 0);
-	context->renderer = SDL_CreateRenderer(context->window, NULL, 0);
+	if(context->window == NULL) {
+		CRFB_LOG(CRFB_ERROR, "Failed to create SDL window %s\n", SDL_GetError());
+		return CRFB_FAILED;
+	}
+
+	context->renderer = SDL_CreateRenderer(context->window, NULL, SDL_RENDERER_ACCELERATED);
+	if(context->renderer == NULL) {
+		CRFB_LOG(CRFB_ERROR, "Failed to create SDL renderer %s\n", SDL_GetError());
+		return CRFB_FAILED;
+	}
 
 	context->texture = SDL_CreateTexture(
 		context->renderer, 
@@ -44,6 +53,11 @@ CRFBResult setup_sdl(AppContext* app) {
 		SDL_TEXTUREACCESS_STREAMING, 
 		WINDOW_WIDTH, 
 		WINDOW_HEIGHT);
+
+	if(context->texture == NULL) {
+		CRFB_LOG(CRFB_ERROR, "Failed to create SDL window\n");
+		return CRFB_FAILED;
+	}
 
     int pitch;
 
@@ -266,7 +280,7 @@ int main(){
 		SDL_RenderClear(app.context->renderer);
 		SDL_LockTexture(app.context->texture, &window_rect, &app.pixels, &pitch);
 		
-		memcpy(app.pixels, app.buffer->data, (app.buffer->width * app.buffer->height) * 4);
+		// memcpy(app.pixels, app.buffer->data, (app.buffer->width * app.buffer->height) * 4);
 
 		SDL_UnlockTexture(app.context->texture);
 		SDL_RenderTexture(app.context->renderer, app.context->texture, &window_rect_f, &window_rect_f);

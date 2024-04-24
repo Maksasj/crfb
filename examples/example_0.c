@@ -30,10 +30,9 @@ int main(int argc, char *argv[]){
     crfb_client_recv_capabilities(client, ext.numberOfEncodings);
 
     CRFBEncoding encodings[] = {
-        RAW_ENCODING,
-        0xffffff21, 
+        RAW_ENCODING
     };
-    crfb_client_send_set_encodings_message(client, encodings, 8);
+    crfb_client_send_set_encodings_message(client, encodings, 1);
 
     unsigned int width = serverInit.framebufferWidth;
     unsigned int height = serverInit.framebufferHeight;
@@ -42,7 +41,7 @@ int main(int argc, char *argv[]){
     CRFBFramebuffer* buffer = crfb_create_frame_buffer(width, height, channels);
 
     for(int frame = 0; ; ++frame) {
-        crfb_client_send_framebuffer_update_request_message(client, 0, 0, 0, 1920, 1080);
+        crfb_client_send_framebuffer_update_request_message(client, 0, 0, 0, 800, 600);
 
         CRFBFramebufferUpdate update; 
         crfb_client_recv_framebuffer_update_message(client, &update);
