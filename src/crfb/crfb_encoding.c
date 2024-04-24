@@ -19,8 +19,8 @@ void crfb_client_recv_raw_encoding(CRFBClient* client, CRFBFramebuffer* buffer, 
 
         len += n;
     }
-
-    // Handle color corrections
+    
+    // Handle color corrections, todo
     for(int x = 0; x < width; ++x) {
         for(int y = 0; y < height; ++y) {
             int* pixel = &((int*) pixels)[x + y*width];

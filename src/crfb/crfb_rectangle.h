@@ -4,6 +4,7 @@
 #include "crfb_logger.h"
 #include "crfb_client.h"
 #include "crfb_utils.h"
+#include "crfb_result.h"
 
 typedef struct CRFBRectangle {
     unsigned short xPosition;
@@ -13,6 +14,8 @@ typedef struct CRFBRectangle {
     int ecodingType;// Todo
 } CRFBRectangle;
 
-CRFBRectangle crfb_client_recv_rectangle(CRFBClient* client);
+void crfb_client_recv_rectangle(CRFBClient* client, CRFBRectangle* rectangle);
+
+CRFBResult crfb_client_valid_rectangle(CRFBRectangle* rectangle, unsigned int, unsigned int);
 
 #endif

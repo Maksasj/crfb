@@ -6,6 +6,7 @@
 #include "crfb_utils.h"
 #include "crfb_security_types.h"
 
+void crfb_client_run_none_security_handshake(CRFBClient* client);
 void crfb_client_run_tight_security_handshake(CRFBClient* client);
 
 #endif

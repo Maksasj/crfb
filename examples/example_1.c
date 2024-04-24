@@ -14,11 +14,6 @@
 const SDL_FRect window_rect_f = {0.0f, 0.0f, WINDOW_WIDTH, WINDOW_HEIGHT};
 const SDL_Rect window_rect = 	{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
 
-typedef enum CRFBResult {
-	CRFB_OK,
-	CRFB_FAILED
-} CRFBResult;
-
 typedef struct SDLContext {
 	SDL_Window* window;
     SDL_Renderer* renderer;
@@ -85,7 +80,8 @@ void* screen_update_thread(void* ptr) {
 
 	while(!app->exitFlag) {
 		crfb_client_send_framebuffer_update_request_message(client, 1, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-		CRFBFramebufferUpdate update = crfb_client_recv_framebuffer_update_message(client);
+		CRFBFramebufferUpdate update;
+		crfb_client_recv_framebuffer_update_message(client, &update);
 
 		if(update.messageType != FRAMEBUFFER_UPDATE) {
 			CRFB_LOG(CRFB_ERROR, "Message type is not a FRAMEBUFFER_UPDATE %d", update.messageType);
@@ -93,10 +89,17 @@ void* screen_update_thread(void* ptr) {
 			break;
 		}
 
+		CRFB_LOG(CRFB_INFO, "Receiving %d rectangles", update.numberOfRectangles);
 		for(int i = 0; i < update.numberOfRectangles; ++i) {
-			CRFBRectangle rect = crfb_client_recv_rectangle(client);
+			CRFBRectangle rect;
+			crfb_client_recv_rectangle(client, &rect);
 
-			CRFB_LOG(CRFB_INFO, "Receiving %d rectangles", update.numberOfRectangles);
+			if(crfb_client_valid_rectangle(&rect, WINDOW_WIDTH, WINDOW_HEIGHT) != CRFB_OK) {
+				CRFB_LOG(CRFB_ERROR, "Received invalid rectangle [%d] %d %d %d %d %d", i, rect.xPosition, rect.yPosition, rect.width, rect.height, rect.ecodingType);
+				continue;
+			}
+
+			CRFB_LOG(CRFB_INFO, "Received rectangle [%d] %d %d %d %d %d", i, rect.xPosition, rect.yPosition, rect.width, rect.height, rect.ecodingType);
 
 			if(rect.ecodingType == RAW_ENCODING) {
 				crfb_client_recv_raw_encoding(client, buffer, &rect);
@@ -105,7 +108,7 @@ void* screen_update_thread(void* ptr) {
 			} else if(rect.ecodingType == DESKTOP_SIZE_PSEUDO_ENCODING) {
 				CRFB_LOG(CRFB_WARNING, "Desktop size pseudo encoding");
 			} else {
-				CRFB_LOG(CRFB_ERROR, "Unsuported rectangle encoding %x", rect.ecodingType);
+				CRFB_LOG(CRFB_ERROR, "Unsuported rectangle encoding [%d] %d %d %d %d %d", i, rect.xPosition, rect.yPosition, rect.width, rect.height, rect.ecodingType);
 			}
 		}
 	}
@@ -121,7 +124,7 @@ CRFBResult setup_crfb(AppContext* app) {
 	CRFB_LOG(CRFB_INFO, "Started CRFB client");
 
     crfb_client_connect(client, adress, port);
-	CRFB_LOG(CRFB_INFO, "Connected to %s:%d serer", adress, port);
+	CRFB_LOG(CRFB_INFO, "Connected to %s:%d server", adress, port);
 
     CRFBProtocolVersion version = crfb_client_recv_server_handshake(client);
     if(version != CRFB_003_008) 
@@ -130,7 +133,8 @@ CRFBResult setup_crfb(AppContext* app) {
     crfb_client_send_handshake(client, CRFB_003_008);
 
     crfb_client_get_security_types(client);
-    crfb_client_run_tight_security_handshake(client);
+	crfb_client_run_tight_security_handshake(client);
+	// crfb_client_run_none_security_handshake(client);
 
     CRFBSecurityResult result = crfb_client_recv_security_result(client);
 	if(result != CRFB_SECURITY_RESULT_OK)
@@ -148,10 +152,10 @@ CRFBResult setup_crfb(AppContext* app) {
 
     CRFBEncoding encodings[] = {
         RAW_ENCODING,
-		COPYRECT_ENCODING //,
+		// COPYRECT_ENCODING //,
         // DESKTOP_SIZE_PSEUDO_ENCODING
     };
-    crfb_client_send_set_encodings_message(client, encodings, 2);
+    crfb_client_send_set_encodings_message(client, encodings, 1);
 
     unsigned int width = serverInit.framebufferWidth;
     unsigned int height = serverInit.framebufferHeight;	

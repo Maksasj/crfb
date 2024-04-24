@@ -44,10 +44,12 @@ int main(int argc, char *argv[]){
     for(int frame = 0; ; ++frame) {
         crfb_client_send_framebuffer_update_request_message(client, 0, 0, 0, 1920, 1080);
 
-        CRFBFramebufferUpdate update = crfb_client_recv_framebuffer_update_message(client);
+        CRFBFramebufferUpdate update; 
+        crfb_client_recv_framebuffer_update_message(client, &update);
 
         for(int i = 0; i < update.numberOfRectangles; ++i) {
-            CRFBRectangle rect = crfb_client_recv_rectangle(client);
+            CRFBRectangle rect;
+            crfb_client_recv_rectangle(&rect, client);
 
             printf("%d, %d, %d, %d, %d\n", rect.xPosition, rect.yPosition, rect.width, rect.height, rect.ecodingType);
 

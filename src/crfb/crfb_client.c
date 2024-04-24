@@ -7,7 +7,7 @@ CRFBClient* crfb_new_client() {
         CRFB_LOG(CRFB_ERROR, "Failed to create CRFB client socket");
         exit(1);
     }
-
+    
     int opt = 1;
     if (setsockopt(client->socket, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt)) == -1) {
         perror("setsockopt");

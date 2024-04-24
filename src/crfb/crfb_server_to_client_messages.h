@@ -19,6 +19,6 @@ typedef struct CRFBFramebufferUpdate {
     unsigned short numberOfRectangles;
 } CRFBFramebufferUpdate;
 
-CRFBFramebufferUpdate crfb_client_recv_framebuffer_update_message(CRFBClient* client);
+void crfb_client_recv_framebuffer_update_message(CRFBClient* client, CRFBFramebufferUpdate*);
 
 #endif
