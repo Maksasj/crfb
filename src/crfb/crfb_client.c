@@ -1,6 +1,14 @@
 #include "crfb_client.h"
 
 CRFBClient* crfb_new_client() {
+    #ifdef _WIN32
+        WSADATA data;
+    #endif 
+
+    #ifdef _WIN32
+        WSAStartup(MAKEWORD(2,2),&data);    
+    #endif
+
     CRFBClient* client = (CRFBClient*) malloc(sizeof(CRFBClient));
 
     if ((client->socket = socket(AF_INET, SOCK_STREAM, 0))< 0){
@@ -24,10 +32,14 @@ void crfb_client_connect(CRFBClient* client, const char* ip, long port) {
     servaddr.sin_family = AF_INET; // nurodomas protokolas (IP)
     servaddr.sin_port = htons(port); // nurodomas portas
 
-    if (inet_aton(ip, &servaddr.sin_addr) <= 0 ) {
-        CRFB_LOG(CRFB_ERROR, "Invalid remote IP address");
-        exit(1);
-    }
+    #ifdef _WIN32
+        servaddr.sin_addr.s_addr = inet_addr(ip);
+    #else
+        if (inet_aton(ip, &servaddr.sin_addr) <= 0 ) {
+            CRFB_LOG(CRFB_ERROR, "Invalid remote IP address");
+            exit(1);
+        }
+    #endif   
 
     if (connect(client->socket, (struct sockaddr*)&servaddr,sizeof(servaddr))<0){
         CRFB_LOG(CRFB_ERROR, "Failed to connect()");

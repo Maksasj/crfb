@@ -1,6 +1,6 @@
 #include <SDL3/SDL.h>
 #include <pthread.h>
-#include <sys/select.h>
+// #include <sys/select.h>
 
 #include "crfb/crfb.h"
 
@@ -89,6 +89,7 @@ void* handle_mouse_input(void *ptr) {
 }
 
 void empty_recv_buffer(int sockfd) {
+	/*
 	CRFB_LOG(CRFB_INFO, "Emptying recv buffer, resetting stream");
 
     char buffer[1024];
@@ -98,11 +99,11 @@ void empty_recv_buffer(int sockfd) {
     struct timeval tv;
     int retval;
 
-    /* Watch sockfd to see when it has input. */
+    // Watch sockfd to see when it has input
     FD_ZERO(&read_fds);
     FD_SET(sockfd, &read_fds);
 
-    /* Wait up to one second. */
+    // Wait up to one second
     tv.tv_sec = 0;
     tv.tv_usec = 500000;
 
@@ -114,11 +115,12 @@ void empty_recv_buffer(int sockfd) {
         } else if (retval) {
             bytes = recv(sockfd, buffer, sizeof(buffer), 0);
         } else {
-            /* No data within one second. */
+            // No data within one second
             printf("No data within one second.\n");
             return;
         }
     } while (bytes > 0);
+	*/
 }
 
 void* screen_update_thread(void* ptr) {
@@ -226,6 +228,7 @@ void handle_sdl_events(AppContext* app) {
 		} else if(event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_KEY_UP) {
 			unsigned int key = event.key.keysym.sym;
 
+			/*
 			if(key == SDLK_TAB) key = XK_Tab;
 			if(key == SDLK_CAPSLOCK) key = XK_Caps_Lock;
 
@@ -241,6 +244,7 @@ void handle_sdl_events(AppContext* app) {
 			if(key == SDLK_KP_ENTER) key = XK_KP_Enter;
 
 			if(key == SDLK_BACKSPACE) key = XK_BackSpace;
+			*/
 
 			if(event.type == SDL_EVENT_KEY_DOWN)
 				crfb_client_send_key_event_message(app->client, 1, key);

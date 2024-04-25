@@ -1,6 +1,8 @@
 # CRFB
 
-read:
+```
+cmake --build build && start build\examples\crfb_example_2.exe
+```
 
 Todo:
     - [x] Rectangle Api

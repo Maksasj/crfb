@@ -1,9 +1,11 @@
 #ifndef _CRFB_CLIENT_TO_SERVER_MESSAGES_H_
 #define _CRFB_CLIENT_TO_SERVER_MESSAGES_H_
 
+/*
 #define XK_MISCELLANY
 #include <X11/keysymdef.h>
 #include <X11/Xlib.h>
+*/
 
 #include "crfb_backend.h"
 #include "crfb_client.h"
@@ -14,7 +16,7 @@ typedef enum CRFBCLientToServerMessage {
     SET_PIXEL_FORMAT = 0,               // [ ]
     SET_ENCODINGS = 2,                  // [x]
     FRAMEBUFFER_UPDATE_REQUEST = 3,     // [x]
-    KEY_EVENT = 4,                      // [x]
+    CRFB_KEY_EVENT = 4,                      // [x]
     POINTER_EVENT = 5,                  // [ ]
     CLIENT_CUT_TEXT = 6                 // [ ]
 } CRFBCLientToServerMessage;

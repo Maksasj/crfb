@@ -79,7 +79,7 @@ void crfb_client_send_key_event_message(CRFBClient* client, unsigned char downFl
     } CRFBKeyEvent;
 
     CRFBKeyEvent req;
-    req.messageType = KEY_EVENT;
+    req.messageType = CRFB_KEY_EVENT;
     req.downFlag = downFlag;
     
     req.padding[0] = 0;
