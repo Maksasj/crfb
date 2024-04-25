@@ -149,7 +149,7 @@ void* screen_update_thread(void* ptr) {
 				// continue;
 			}
 
-			CRFB_LOG(CRFB_INFO, "Received rectangle [%d] %d %d %d %d %d", i, rect.xPosition, rect.yPosition, rect.width, rect.height, rect.ecodingType);
+			// CRFB_LOG(CRFB_INFO, "Received rectangle [%d] %d %d %d %d %d", i, rect.xPosition, rect.yPosition, rect.width, rect.height, rect.ecodingType);
 
 			if(rect.ecodingType == RAW_ENCODING) {
 				crfb_client_recv_raw_encoding(client, buffer, &rect);
