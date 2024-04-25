@@ -3,7 +3,7 @@
 CRFBProtocolVersion crfb_client_recv_server_handshake(CRFBClient* client) {
     char buffer[13] = { '\0' };
 
-    if(recv(client->socket, buffer, 12, 0) <= 0)
+    if(recv(client->socket, buffer, 12, MSG_WAITALL) <= 0)
         CRFB_LOG(CRFB_ERROR, "Failed to recv server version");
 
     if(strcmp(buffer, "RFB 003.003\n") == 0)

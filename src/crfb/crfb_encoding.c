@@ -51,7 +51,7 @@ void crfb_client_recv_copy_rect_encoding(CRFBClient* client, CRFBFramebuffer* bu
     } CopyRectEncoding;
 
     CopyRectEncoding encoding;
-    if(recv(client->socket, &encoding, sizeof(CopyRectEncoding), 0) <= 0) 
+    if(recv(client->socket, &encoding, sizeof(CopyRectEncoding), MSG_WAITALL) <= 0) 
         CRFB_LOG(CRFB_ERROR, "Failed to recv copy rect encoding");
 
     crfb_ushort_to_little(&encoding.srcXPosition);

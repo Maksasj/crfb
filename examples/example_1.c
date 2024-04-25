@@ -78,7 +78,7 @@ void* handle_mouse_input(void *ptr) {
 		float newX, newY;
 		unsigned int buttons = SDL_GetMouseState(&newX, &newY);
 
-		if(xPosition != newX || yPosition != newY) {
+		if((xPosition != newX || yPosition != newY) || buttons != 0) {
 			crfb_client_send_pointer_event_message(client, buttons, xPosition, yPosition);
 			xPosition = newX;
 			yPosition = newY;
@@ -89,7 +89,6 @@ void* handle_mouse_input(void *ptr) {
 }
 
 void empty_recv_buffer(int sockfd) {
-	/*
 	CRFB_LOG(CRFB_INFO, "Emptying recv buffer, resetting stream");
 
     char buffer[1024];
@@ -120,7 +119,6 @@ void empty_recv_buffer(int sockfd) {
             return;
         }
     } while (bytes > 0);
-	*/
 }
 
 void* screen_update_thread(void* ptr) {
@@ -169,7 +167,7 @@ void* screen_update_thread(void* ptr) {
 }
 
 CRFBResult setup_crfb(AppContext* app) {
-	char adress[] = "192.168.1.116";
+	char adress[] = "26.250.187.108";
 	unsigned int port = 5900;
 
 	CRFBClient* client = crfb_new_client();
@@ -228,23 +226,21 @@ void handle_sdl_events(AppContext* app) {
 		} else if(event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_KEY_UP) {
 			unsigned int key = event.key.keysym.sym;
 
-			/*
-			if(key == SDLK_TAB) key = XK_Tab;
-			if(key == SDLK_CAPSLOCK) key = XK_Caps_Lock;
+			if(key == SDLK_TAB) key = 0xff09; //XK_Tab;
+            if(key == SDLK_CAPSLOCK) key = 0xffe5;// XK_Caps_Lock;
 
-			if(key == SDLK_LSHIFT) key = XK_Shift_L;
-			if(key == SDLK_RSHIFT) key = XK_Shift_R;
+            if(key == SDLK_LSHIFT) key = 0xffe1; //XK_Shift_L;
+            if(key == SDLK_RSHIFT) key = 0xffe2; // XK_Shift_R;
 
-			if(key == SDLK_LCTRL) key = XK_Control_L;
-			if(key == SDLK_RCTRL) key = XK_Control_R;
+            if(key == SDLK_LCTRL) key = 0xffe3; // XK_Control_L;
+            if(key == SDLK_RCTRL) key = 0xffe4; // XK_Control_R;
 
-			if(key == SDLK_LALT) key = XK_Alt_L;
-			if(key == SDLK_RALT) key = XK_Alt_R;
+            if(key == SDLK_LALT) key = 0xffe9; // XK_Alt_L;
+            if(key == SDLK_RALT) key = 0xffea; // XK_Alt_R;
 
-			if(key == SDLK_KP_ENTER) key = XK_KP_Enter;
+            if(key == SDLK_RETURN) key = 0xff8d; // XK_KP_Enter;
 
-			if(key == SDLK_BACKSPACE) key = XK_BackSpace;
-			*/
+            if(key == SDLK_BACKSPACE) key = 0xff08; // XK_BackSpace;
 
 			if(event.type == SDL_EVENT_KEY_DOWN)
 				crfb_client_send_key_event_message(app->client, 1, key);
@@ -284,7 +280,7 @@ int main(){
 		SDL_RenderClear(app.context->renderer);
 		SDL_LockTexture(app.context->texture, &window_rect, &app.pixels, &pitch);
 		
-		// memcpy(app.pixels, app.buffer->data, (app.buffer->width * app.buffer->height) * 4);
+		memcpy(app.pixels, app.buffer->data, (app.buffer->width * app.buffer->height) * 4);
 
 		SDL_UnlockTexture(app.context->texture);
 		SDL_RenderTexture(app.context->renderer, app.context->texture, &window_rect_f, &window_rect_f);

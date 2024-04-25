@@ -3,34 +3,34 @@
 CRFBPixelFormat crfb_client_recv_pixel_format(CRFBClient* client) {
     CRFBPixelFormat format;
 
-    if(recv(client->socket, &format.bitsPerPixel,    sizeof(unsigned char), 0) <= 0)
+    if(recv(client->socket, &format.bitsPerPixel,    sizeof(unsigned char), MSG_WAITALL) <= 0)
         CRFB_LOG(CRFB_ERROR, "Failed to recv pixel format depth");
     
-    if(recv(client->socket,     &format.depth,           sizeof(unsigned char), 0) <= 0)
+    if(recv(client->socket,     &format.depth,           sizeof(unsigned char), MSG_WAITALL) <= 0)
         CRFB_LOG(CRFB_ERROR, "Failed to recv pixel format depth");
     
-    if(recv(client->socket,     &format.bigEndianFlag,   sizeof(unsigned char), 0) <= 0)
+    if(recv(client->socket,     &format.bigEndianFlag,   sizeof(unsigned char), MSG_WAITALL) <= 0)
         CRFB_LOG(CRFB_ERROR, "Failed to recv pixel format bigEndianFlag");
 
-    if(recv(client->socket,     &format.trueColorFlag,   sizeof(unsigned char), 0) <= 0)
+    if(recv(client->socket,     &format.trueColorFlag,   sizeof(unsigned char), MSG_WAITALL) <= 0)
         CRFB_LOG(CRFB_ERROR, "Failed to recv pixel format trueColorFlag");
 
-    if(recv(client->socket,     &format.redMax,          sizeof(unsigned short), 0) <= 0)
+    if(recv(client->socket,     &format.redMax,          sizeof(unsigned short), MSG_WAITALL) <= 0)
         CRFB_LOG(CRFB_ERROR, "Failed to recv pixel format redMax");
 
-    if(recv(client->socket,     &format.greenMax,        sizeof(unsigned short), 0) <= 0)
+    if(recv(client->socket,     &format.greenMax,        sizeof(unsigned short), MSG_WAITALL) <= 0)
         CRFB_LOG(CRFB_ERROR, "Failed to recv pixel format greenMax");
 
-    if(recv(client->socket,     &format.blueMax,         sizeof(unsigned short), 0) <= 0)
+    if(recv(client->socket,     &format.blueMax,         sizeof(unsigned short), MSG_WAITALL) <= 0)
         CRFB_LOG(CRFB_ERROR, "Failed to recv pixel format blueMax");
 
-    if(recv(client->socket,     &format.redShift,        sizeof(unsigned char), 0) <= 0)
+    if(recv(client->socket,     &format.redShift,        sizeof(unsigned char), MSG_WAITALL) <= 0)
         CRFB_LOG(CRFB_ERROR, "Failed to recv pixel format redShift");
 
-    if(recv(client->socket,     &format.greenShift,      sizeof(unsigned char), 0) <= 0)
+    if(recv(client->socket,     &format.greenShift,      sizeof(unsigned char), MSG_WAITALL) <= 0)
         CRFB_LOG(CRFB_ERROR, "Failed to recv pixel format greenShift");
 
-    if(recv(client->socket,     &format.blueShift,       sizeof(unsigned char), 0) <= 0)
+    if(recv(client->socket,     &format.blueShift,       sizeof(unsigned char), MSG_WAITALL) <= 0)
         CRFB_LOG(CRFB_ERROR, "Failed to recv pixel format blueShift");
 
     crfb_ushort_to_little(&format.redMax);
@@ -38,7 +38,7 @@ CRFBPixelFormat crfb_client_recv_pixel_format(CRFBClient* client) {
     crfb_ushort_to_little(&format.blueMax);
 
     char padding[3] = { 0 };
-    if(recv(client->socket, padding, 3, 0) <= 0)
+    if(recv(client->socket, padding, 3, MSG_WAITALL) <= 0)
         CRFB_LOG(CRFB_ERROR, "Failed to recv pixel format padding");
 
     return format;

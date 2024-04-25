@@ -1,7 +1,7 @@
 #include "crfb_rectangle.h"
 
 void crfb_client_recv_rectangle(CRFBClient* client, CRFBRectangle* rectangle) {
-    if(recv(client->socket, rectangle, sizeof(CRFBRectangle), 0) <= 0)
+    if(recv(client->socket, rectangle, sizeof(CRFBRectangle), MSG_WAITALL) <= 0)
         CRFB_LOG(CRFB_ERROR, "Failed to recv rectangle");
 
     crfb_ushort_to_little(&rectangle->xPosition);

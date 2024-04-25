@@ -18,11 +18,11 @@ void crfb_client_run_tight_security_handshake(CRFBClient* client) {
         CRFB_LOG(CRFB_ERROR, "Failed to send tight security type");
 
     unsigned int tunnelCount = 0;
-    if(recv(client->socket, &tunnelCount, sizeof(tunnelCount), 0) <= 0)
+    if(recv(client->socket, &tunnelCount, sizeof(tunnelCount), MSG_WAITALL) <= 0)
         CRFB_LOG(CRFB_ERROR, "Failed to recv tight security handshake tunnel count");
 
     unsigned int authTypeCount = 0;
-    if(recv(client->socket, &authTypeCount, sizeof(authTypeCount), 0) <= 0)
+    if(recv(client->socket, &authTypeCount, sizeof(authTypeCount), MSG_WAITALL) <= 0)
         CRFB_LOG(CRFB_ERROR, "Failed to recv tight security handshake authentication type count");
 
     crfb_uint_to_little(&tunnelCount);

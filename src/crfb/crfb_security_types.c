@@ -2,13 +2,13 @@
 
 void crfb_client_get_security_types(CRFBClient* client) {
     unsigned char count;
-    if(recv(client->socket, &count, sizeof(unsigned char), 0) <= 0)
+    if(recv(client->socket, &count, sizeof(unsigned char), MSG_WAITALL) <= 0)
         CRFB_LOG(CRFB_ERROR, "Failed to recv security type count");
 
     for(int i = 0; i < count; ++i) {
         unsigned char type;
 
-        if(recv(client->socket, &type, sizeof(unsigned char), 0) <= 0)
+        if(recv(client->socket, &type, sizeof(unsigned char), MSG_WAITALL) <= 0)
             CRFB_LOG(CRFB_ERROR, "Failed to recv security type count");
     }
 }
