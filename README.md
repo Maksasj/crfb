@@ -1,7 +1,7 @@
 # CRFB
 
 ```
-cmake --build build && start build\examples\crfb_example_2.exe
+cmake --build build && start build\examples\crfb_example_1.exe
 ```
 
 Todo:

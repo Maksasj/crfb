@@ -15,6 +15,11 @@
 const SDL_FRect window_rect_f = {0.0f, 0.0f, WINDOW_WIDTH, WINDOW_HEIGHT};
 const SDL_Rect window_rect = 	{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
 
+typedef struct ConnectionContext {
+	char* adress;
+	unsigned int port;
+} ConnectionContext;
+
 typedef struct SDLContext {
 	SDL_Window* window;
     SDL_Renderer* renderer;
@@ -30,12 +35,15 @@ typedef struct AppContext {
 	unsigned char exitFlag;
 } AppContext;
 
-CRFBResult setup_sdl(AppContext* app) {
+CRFBResult setup_sdl(AppContext* app, ConnectionContext* connection) {
 	SDL_Init(SDL_INIT_EVERYTHING);
 
 	SDLContext* context = (SDLContext*) malloc(sizeof(SDLContext));
 
-	context->window = SDL_CreateWindow("CRFB Client [192.168.1.116:5900]", WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+	char title[50] = { '\0' };  
+	sprintf(title, "CRFB Client [%s:%d]", connection->adress, connection->port);
+
+	context->window = SDL_CreateWindow(title, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
 	if(context->window == NULL) {
 		CRFB_LOG(CRFB_ERROR, "Failed to create SDL window %s\n", SDL_GetError());
 		return CRFB_FAILED;
@@ -166,15 +174,12 @@ void* screen_update_thread(void* ptr) {
 	return ptr;
 }
 
-CRFBResult setup_crfb(AppContext* app) {
-	char adress[] = "26.250.187.108";
-	unsigned int port = 5900;
-
+CRFBResult setup_crfb(AppContext* app, ConnectionContext* connection) {
 	CRFBClient* client = crfb_new_client();
 	CRFB_LOG(CRFB_INFO, "Started CRFB client");
 
-    crfb_client_connect(client, adress, port);
-	CRFB_LOG(CRFB_INFO, "Connected to %s:%d server", adress, port);
+    crfb_client_connect(client, connection->adress, connection->port);
+	CRFB_LOG(CRFB_INFO, "Connected to %s:%d server", connection->adress, connection->port);
 
     CRFBProtocolVersion version = crfb_client_recv_server_handshake(client);
     if(version != CRFB_003_008) 
@@ -253,16 +258,32 @@ void handle_sdl_events(AppContext* app) {
 	}
 }
 
-int main(){
+int main(int argc, char *argv[]){
 	AppContext app;
 	app.exitFlag = 0;
 
-	if(setup_crfb(&app) != CRFB_OK) {
+	ConnectionContext connection;
+
+	if(argc != 3){
+		CRFB_LOG(CRFB_ERROR, "CRFB client usage: %s <ip> <port>\n", argv[0]);
+		return 1;
+	}
+
+	connection.port = atoi(argv[2]);
+
+    if ((connection.port < 1) || (connection.port > 65535)){
+		CRFB_LOG(CRFB_ERROR, "Invalid port specified");
+		return 1;
+    }
+
+	connection.adress = argv[1];
+
+	if(setup_crfb(&app, &connection) != CRFB_OK) {
 		CRFB_LOG(CRFB_ERROR, "Failed to start crfb");
 		return 1;
 	}
 
-	if(setup_sdl(&app) != CRFB_OK) {
+	if(setup_sdl(&app, &connection) != CRFB_OK) {
 		CRFB_LOG(CRFB_ERROR, "Failed to start sdl");
 		return 1;
 	}
